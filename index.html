@@ -95,6 +95,7 @@
         .status-icon.success{background:var(--green-pale);color:var(--green-primary)}
         .status-icon.pending{background:#FEF9E7;color:var(--gold)}
         .status-icon.error{background:#FEF2F2;color:#DC2626}
+        .status-icon.processing{background:#E0F2FE;color:#0284C7}
         .status-title{font-size:1.1rem;font-weight:700;color:var(--gray-900);margin-bottom:6px}
         .status-desc{font-size:0.85rem;color:var(--gray-600);margin-bottom:20px;line-height:1.6}
         .status-details{background:var(--gray-50);border-radius:var(--radius-md);padding:14px;margin-bottom:20px;text-align:left}
@@ -113,19 +114,19 @@
         .footer-mission{font-size:0.72rem;color:var(--gray-500);font-style:italic}
         .footer-heart{color:var(--gold)}
 
-        /* Auth screens */
         .auth-screen{display:none}
         .auth-screen.active{display:block}
         .auth-tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid var(--gray-100);padding-bottom:4px}
         .auth-tab{flex:1;padding:10px;text-align:center;font-size:0.85rem;font-weight:600;color:var(--gray-400);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-6px;transition:var(--transition)}
         .auth-tab.active{color:var(--green-primary);border-bottom-color:var(--green-primary)}
-        .auth-divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--gray-400);font-size:0.75rem}
-        .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--gray-200)}
         .user-badge{display:flex;align-items:center;gap:10px;background:var(--green-pale);border:1.5px solid var(--green-light);border-radius:var(--radius-md);padding:12px 16px;margin-bottom:16px}
         .user-badge .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--green-primary),var(--green-light));color:var(--white);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem}
         .user-badge .user-info{flex:1}
         .user-badge .user-name{font-size:0.9rem;font-weight:700;color:var(--gray-900)}
         .user-badge .user-email{font-size:0.75rem;color:var(--gray-600)}
+
+        .pulse-dot{width:10px;height:10px;background:var(--gold);border-radius:50%;display:inline-block;margin-right:6px;animation:pulse 1.5s infinite}
+        @keyframes pulse{0%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.3)}100%{opacity:1;transform:scale(1)}}
 
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes fadeInUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
@@ -164,15 +165,13 @@
 
     <main class="container">
 
-        <!-- LOGIN / REGISTER SCREEN -->
+        <!-- LOGIN / REGISTER -->
         <div id="authScreen" class="form-section auth-screen animate-in delay-1">
             <h2><div class="icon">🔐</div> Acesse a sua Conta</h2>
             <div class="auth-tabs">
                 <div class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Entrar</div>
                 <div class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Criar Conta</div>
             </div>
-
-            <!-- Login Form -->
             <div id="loginForm">
                 <div class="form-group">
                     <label for="loginEmail">Email</label>
@@ -187,8 +186,6 @@
                     <button class="btn btn-link" onclick="showForgotPassword()">Esqueceu a palavra-passe?</button>
                 </div>
             </div>
-
-            <!-- Register Form -->
             <div id="registerForm" style="display:none">
                 <div class="form-group">
                     <label for="regName">Nome Completo *</label>
@@ -199,7 +196,7 @@
                     <input type="email" id="regEmail" placeholder="nome@email.com" required>
                 </div>
                 <div class="form-group">
-                    <label for="regPassword">Palavra-passe * (min. 6 caracteres)</label>
+                    <label for="regPassword">Palavra-passe * (min. 6)</label>
                     <input type="password" id="regPassword" placeholder="••••••••" required>
                 </div>
                 <div class="form-group">
@@ -211,7 +208,7 @@
             </div>
         </div>
 
-        <!-- FORGOT PASSWORD SCREEN -->
+        <!-- FORGOT PASSWORD -->
         <div id="forgotScreen" class="form-section auth-screen animate-in delay-1" style="display:none">
             <h2><div class="icon">📧</div> Recuperar Palavra-passe</h2>
             <p style="font-size:0.85rem;color:var(--gray-600);margin-bottom:14px">Insira o seu email e enviaremos um link para redefinir a palavra-passe.</p>
@@ -225,9 +222,8 @@
             </div>
         </div>
 
-        <!-- PAYMENT FORM (visible only when logged in) -->
+        <!-- PAYMENT FORM -->
         <div id="paymentForm" class="form-section animate-in delay-1" style="display:none">
-            <!-- User Badge -->
             <div class="user-badge" id="userBadge">
                 <div class="avatar" id="userAvatar">U</div>
                 <div class="user-info">
@@ -312,6 +308,19 @@
             </button>
         </div>
 
+        <!-- PROCESSING -->
+        <div id="processingScreen" class="form-section status-screen">
+            <div class="status-icon processing">⏳</div>
+            <div class="status-title">Aguardando Confirmação</div>
+            <div class="status-desc">O pagamento foi iniciado. Estamos a verificar o estado em tempo real. Verifique o seu telemóvel e confirme se solicitado.</div>
+            <div class="status-details" id="processingDetails"></div>
+            <div style="margin-bottom:16px">
+                <span class="pulse-dot"></span>
+                <span style="font-size:0.8rem;color:var(--gray-600)">A verificar estado do pagamento...</span>
+            </div>
+            <button class="btn btn-outline" onclick="resetForm()">Voltar ao Início</button>
+        </div>
+
         <div id="successScreen" class="form-section status-screen">
             <div class="status-icon success">✓</div>
             <div class="status-title">Pagamento Iniciado!</div>
@@ -350,6 +359,7 @@
     </footer>
 
     <script>
+        // ===== CONFIGURAÇÃO - ALTERE AQUI =====
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzjzjdAn-Tthdd-Abvy9Lirp5YneNKI-3nvm9hYz7Css2KP-f4RJvZCd7Ukc11zIssA/exec";
 
         const firebaseConfig = {
@@ -370,44 +380,30 @@
         let selectedAmount = 150;
         let selectedMethod = 'mpesa';
         let currentUser = null;
+        let activePaymentRef = null;
+        let activeListener = null;
 
-        // ===== AUTH STATE LISTENER =====
         auth.onAuthStateChanged((user) => {
             currentUser = user;
-            if (user) {
-                // User is signed in
-                showPaymentScreen(user);
-            } else {
-                // User is signed out
-                showAuthScreen();
-            }
+            if (user) showPaymentScreen(user);
+            else showAuthScreen();
         });
 
         function showAuthScreen() {
+            hideAllScreens();
             document.getElementById('authScreen').style.display = 'block';
             document.getElementById('authScreen').classList.add('active');
-            document.getElementById('forgotScreen').style.display = 'none';
-            document.getElementById('paymentForm').style.display = 'none';
-            ['successScreen','cardScreen','errorScreen'].forEach(s => {
-                document.getElementById(s).classList.remove('active');
-                document.getElementById(s).style.display = 'none';
-            });
         }
 
         function showPaymentScreen(user) {
-            document.getElementById('authScreen').style.display = 'none';
-            document.getElementById('forgotScreen').style.display = 'none';
+            hideAllScreens();
             document.getElementById('paymentForm').style.display = 'block';
             document.getElementById('paymentForm').classList.add('active');
-
-            // Fill user badge
             const displayName = user.displayName || localStorage.getItem('userName') || 'Utilizador';
             const email = user.email || '';
             document.getElementById('userDisplayName').textContent = displayName;
             document.getElementById('userDisplayEmail').textContent = email;
             document.getElementById('userAvatar').textContent = displayName.charAt(0).toUpperCase();
-
-            // Auto-fill form if data exists in localStorage
             const savedName = localStorage.getItem('userName');
             const savedPhone = localStorage.getItem('userPhone');
             if (savedName) document.getElementById('fullName').value = savedName;
@@ -415,8 +411,18 @@
             if (email) document.getElementById('email').value = email;
         }
 
-        function showForgotPassword() {
+        function hideAllScreens() {
             document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('forgotScreen').style.display = 'none';
+            document.getElementById('paymentForm').style.display = 'none';
+            ['successScreen','cardScreen','errorScreen','processingScreen'].forEach(s => {
+                document.getElementById(s).classList.remove('active');
+                document.getElementById(s).style.display = 'none';
+            });
+        }
+
+        function showForgotPassword() {
+            hideAllScreens();
             document.getElementById('forgotScreen').style.display = 'block';
             document.getElementById('forgotScreen').classList.add('active');
         }
@@ -428,102 +434,60 @@
             document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
         }
 
-        // ===== LOGIN =====
         async function loginUser() {
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
-
-            if (!email || !password) {
-                alert('Por favor, preencha o email e a palavra-passe.');
-                return;
-            }
-
+            if (!email || !password) { alert('Por favor, preencha o email e a palavra-passe.'); return; }
             showLoading(true);
-            try {
-                await auth.signInWithEmailAndPassword(email, password);
-                // Success - onAuthStateChanged handles UI
-            } catch (error) {
+            try { await auth.signInWithEmailAndPassword(email, password); }
+            catch (error) {
                 showLoading(false);
                 let msg = 'Erro ao entrar. Verifique os dados.';
-                if (error.code === 'auth/user-not-found') msg = 'Conta não encontrada. Crie uma conta primeiro.';
+                if (error.code === 'auth/user-not-found') msg = 'Conta não encontrada.';
                 if (error.code === 'auth/wrong-password') msg = 'Palavra-passe incorreta.';
                 if (error.code === 'auth/invalid-email') msg = 'Email inválido.';
-                if (error.code === 'auth/too-many-requests') msg = 'Muitas tentativas. Tente mais tarde.';
                 alert(msg);
             }
         }
 
-        // ===== REGISTER =====
         async function registerUser() {
             const name = document.getElementById('regName').value.trim();
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPassword').value;
             const phone = document.getElementById('regPhone').value.trim();
-
-            if (!name || !email || !password || !phone) {
-                alert('Por favor, preencha todos os campos obrigatórios.');
-                return;
-            }
-            if (password.length < 6) {
-                alert('A palavra-passe deve ter pelo menos 6 caracteres.');
-                return;
-            }
-            if (phone.length < 9) {
-                alert('Número de telefone inválido.');
-                return;
-            }
-
+            if (!name || !email || !password || !phone) { alert('Preencha todos os campos.'); return; }
+            if (password.length < 6) { alert('Palavra-passe mínima: 6 caracteres.'); return; }
+            if (phone.length < 9) { alert('Telefone inválido.'); return; }
             showLoading(true);
             try {
                 const cred = await auth.createUserWithEmailAndPassword(email, password);
                 await cred.user.updateProfile({ displayName: name });
-
-                // Save user data to Realtime Database
-                await db.ref('users/' + cred.user.uid).set({
-                    name: name,
-                    email: email,
-                    phone: phone,
-                    createdAt: Date.now()
-                });
-
-                // Save to localStorage for form auto-fill
+                await db.ref('users/' + cred.user.uid).set({ name, email, phone, createdAt: Date.now() });
                 localStorage.setItem('userName', name);
                 localStorage.setItem('userPhone', phone);
-
-                // Success - onAuthStateChanged handles UI
             } catch (error) {
                 showLoading(false);
                 let msg = 'Erro ao criar conta.';
-                if (error.code === 'auth/email-already-in-use') msg = 'Este email já está registado. Use "Entrar".';
-                if (error.code === 'auth/invalid-email') msg = 'Email inválido.';
-                if (error.code === 'auth/weak-password') msg = 'Palavra-passe muito fraca. Use pelo menos 6 caracteres.';
+                if (error.code === 'auth/email-already-in-use') msg = 'Email já registado. Use Entrar.';
                 alert(msg);
             }
         }
 
-        // ===== FORGOT PASSWORD =====
         async function resetPassword() {
             const email = document.getElementById('forgotEmail').value.trim();
-            if (!email) {
-                alert('Por favor, insira o seu email.');
-                return;
-            }
+            if (!email) { alert('Insira o email.'); return; }
             showLoading(true);
             try {
                 await auth.sendPasswordResetEmail(email);
                 showLoading(false);
-                alert('Link de recuperação enviado! Verifique o seu email.');
+                alert('Link enviado! Verifique o email.');
                 showAuthScreen();
             } catch (error) {
                 showLoading(false);
-                let msg = 'Erro ao enviar email.';
-                if (error.code === 'auth/user-not-found') msg = 'Email não encontrado.';
-                if (error.code === 'auth/invalid-email') msg = 'Email inválido.';
-                alert(msg);
+                alert('Erro ao enviar email.');
             }
         }
 
-        // ===== LOGOUT =====
         async function logoutUser() {
             showLoading(true);
             try {
@@ -531,25 +495,17 @@
                 localStorage.removeItem('userName');
                 localStorage.removeItem('userPhone');
                 localStorage.removeItem('lastPaymentRef');
-            } catch (e) {
-                showLoading(false);
-                alert('Erro ao sair. Tente novamente.');
-            }
+            } catch (e) { showLoading(false); alert('Erro ao sair.'); }
         }
 
-        // ===== PAYMENT FUNCTIONS (unchanged logic, enhanced with user UID) =====
         function selectType(el, type, amount) {
             document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
             el.classList.add('selected');
             selectedType = type;
             selectedAmount = amount;
             const customBox = document.getElementById('customAmountBox');
-            if (type === 'apoio') {
-                customBox.classList.add('active');
-                selectedAmount = 0;
-            } else {
-                customBox.classList.remove('active');
-            }
+            if (type === 'apoio') { customBox.classList.add('active'); selectedAmount = 0; }
+            else customBox.classList.remove('active');
         }
 
         function selectMethod(el, method) {
@@ -558,144 +514,101 @@
             selectedMethod = method;
         }
 
-        function showLoading(show) {
-            document.getElementById('loadingOverlay').classList.toggle('active', show);
-        }
+        function showLoading(show) { document.getElementById('loadingOverlay').classList.toggle('active', show); }
 
         function showScreen(id) {
-            ['paymentForm','successScreen','cardScreen','errorScreen'].forEach(s => {
-                document.getElementById(s).classList.remove('active');
-                if (s !== 'paymentForm') document.getElementById(s).style.display = 'none';
-            });
-            if (id !== 'paymentForm') {
-                document.getElementById(id).style.display = 'block';
-                setTimeout(() => document.getElementById(id).classList.add('active'), 10);
-            }
+            hideAllScreens();
+            if (id === 'paymentForm') { document.getElementById('paymentForm').style.display = 'block'; document.getElementById('paymentForm').classList.add('active'); }
+            else { document.getElementById(id).style.display = 'block'; setTimeout(() => document.getElementById(id).classList.add('active'), 10); }
         }
 
         function resetForm() {
-            document.getElementById('fullName').value = localStorage.getItem('userName') || '';
-            document.getElementById('phone').value = localStorage.getItem('userPhone') || '';
-            document.getElementById('email').value = currentUser ? (currentUser.email || '') : '';
+            if (activeListener && activePaymentRef) { db.ref('payments/' + activePaymentRef).off('value', activeListener); activeListener = null; activePaymentRef = null; }
             document.getElementById('customValue').value = '';
             selectType(document.querySelector('.type-card'), 'inscricao', 150);
             selectMethod(document.querySelector('.method-card'), 'mpesa');
-            showScreen('paymentForm');
+            if (currentUser) showPaymentScreen(currentUser); else showAuthScreen();
         }
 
         function validate() {
             const name = document.getElementById('fullName').value.trim();
             const phone = document.getElementById('phone').value.trim();
-            if (!name) { alert('Por favor, insira o nome completo.'); return false; }
-            if (!phone || phone.length < 9) { alert('Por favor, insira um número de telefone válido.'); return false; }
-            if (selectedType === 'apoio') {
-                const custom = parseInt(document.getElementById('customValue').value);
-                if (!custom || custom < 10) { alert('Doação mínima: 10 MTN.'); return false; }
-                selectedAmount = custom;
-            }
+            if (!name) { alert('Insira o nome completo.'); return false; }
+            if (!phone || phone.length < 9) { alert('Telefone inválido.'); return false; }
+            if (selectedType === 'apoio') { const c = parseInt(document.getElementById('customValue').value); if (!c || c < 10) { alert('Doação mínima: 10 MTN.'); return false; } selectedAmount = c; }
             return true;
         }
 
         async function processPayment() {
             if (!validate()) return;
-            if (!currentUser) {
-                alert('Sessão expirada. Faça login novamente.');
-                showAuthScreen();
-                return;
-            }
-
+            if (!currentUser) { alert('Sessão expirada.'); showAuthScreen(); return; }
             showLoading(true);
 
             const name = document.getElementById('fullName').value.trim();
             const phone = document.getElementById('phone').value.trim().replace(/\s/g,'');
             const email = document.getElementById('email').value.trim();
-
             const reference = 'ISLAM-' + Date.now() + '-' + Math.random().toString(36).substr(2,6).toUpperCase();
 
-            const paymentData = {
-                name: name,
-                msisdn: phone,
-                email: email || null,
-                type: selectedType,
-                amount: selectedAmount,
-                method: selectedMethod,
-                currency: 'MZN',
-                reference: reference,
-                userId: currentUser.uid,
-                userEmail: currentUser.email
-            };
+            const paymentData = { name, msisdn: phone, email: email || null, type: selectedType, amount: selectedAmount, method: selectedMethod, currency: 'MZN', reference, userId: currentUser.uid, userEmail: currentUser.email };
 
             try {
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(paymentData)
-                });
+                await db.ref('payments/' + reference).set({ ...paymentData, status: 'processing', timestamp: Date.now(), netshopId: null });
+                await db.ref('users/' + currentUser.uid + '/payments/' + reference).set({ type: selectedType, amount: selectedAmount, method: selectedMethod, status: 'processing', timestamp: Date.now(), reference });
+            } catch (dbErr) { showLoading(false); alert('Erro ao guardar dados.'); return; }
 
-                const result = await response.json();
-                showLoading(false);
+            localStorage.setItem('lastPaymentRef', reference);
 
-                if (!result.success) {
-                    document.getElementById('errorMessage').textContent = result.error || 'Erro no servidor.';
-                    showScreen('errorScreen');
-                    return;
-                }
+            let result = null, fetchFailed = false;
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 25000);
+                const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(paymentData), signal: controller.signal });
+                clearTimeout(timeoutId);
+                result = await response.json();
+            } catch (err) { fetchFailed = true; console.warn('Fetch falhou:', err); }
 
-                // Save payment linked to user in Firebase
-                await db.ref('payments/' + reference).set({
-                    ...paymentData,
-                    status: 'pending',
-                    timestamp: Date.now(),
-                    netshopId: result.netshopId || null
-                });
+            showLoading(false);
 
-                // Also save to user's payment history
-                await db.ref('users/' + currentUser.uid + '/payments/' + reference).set({
-                    type: selectedType,
-                    amount: selectedAmount,
-                    method: selectedMethod,
-                    status: 'pending',
-                    timestamp: Date.now(),
-                    reference: reference
-                });
-
-                localStorage.setItem('lastPaymentRef', reference);
-
+            if (!fetchFailed && result && result.success) {
+                await db.ref('payments/' + reference).update({ status: 'pending', netshopId: result.netshopId || null });
+                await db.ref('users/' + currentUser.uid + '/payments/' + reference).update({ status: 'pending' });
                 if (selectedMethod === 'card' && result.checkoutUrl) {
-                    document.getElementById('cardDetails').innerHTML = `
-                        <div class="row"><span class="label">Referência</span><span class="value">${reference}</span></div>
-                        <div class="row"><span class="label">Valor</span><span class="value">${selectedAmount} MTN</span></div>
-                        <div class="row"><span class="label">Método</span><span class="value">Visa/Mastercard</span></div>
-                    `;
+                    document.getElementById('cardDetails').innerHTML = `<div class="row"><span class="label">Referência</span><span class="value">${reference}</span></div><div class="row"><span class="label">Valor</span><span class="value">${selectedAmount} MTN</span></div><div class="row"><span class="label">Método</span><span class="value">Visa/Mastercard</span></div>`;
                     document.getElementById('cardLink').href = result.checkoutUrl;
                     showScreen('cardScreen');
                 } else {
-                    document.getElementById('successDetails').innerHTML = `
-                        <div class="row"><span class="label">Referência</span><span class="value">${reference}</span></div>
-                        <div class="row"><span class="label">Valor</span><span class="value">${selectedAmount} MTN</span></div>
-                        <div class="row"><span class="label">Método</span><span class="value">${selectedMethod.toUpperCase()}</span></div>
-                        <div class="row"><span class="label">Telefone</span><span class="value">${phone}</span></div>
-                    `;
+                    document.getElementById('successDetails').innerHTML = `<div class="row"><span class="label">Referência</span><span class="value">${reference}</span></div><div class="row"><span class="label">Valor</span><span class="value">${selectedAmount} MTN</span></div><div class="row"><span class="label">Método</span><span class="value">${selectedMethod.toUpperCase()}</span></div><div class="row"><span class="label">Telefone</span><span class="value">${phone}</span></div>`;
                     showScreen('successScreen');
+                    listenPayment(reference);
                 }
-
-            } catch (err) {
-                showLoading(false);
-                document.getElementById('errorMessage').textContent = 'Erro de conexão. Verifique a internet.';
+            } else if (!fetchFailed && result && !result.success) {
+                document.getElementById('errorMessage').textContent = result.error || 'Erro no servidor.';
                 showScreen('errorScreen');
+            } else {
+                document.getElementById('processingDetails').innerHTML = `<div class="row"><span class="label">Referência</span><span class="value">${reference}</span></div><div class="row"><span class="label">Valor</span><span class="value">${selectedAmount} MTN</span></div><div class="row"><span class="label">Método</span><span class="value">${selectedMethod.toUpperCase()}</span></div><div class="row"><span class="label">Telefone</span><span class="value">${phone}</span></div>`;
+                showScreen('processingScreen');
+                listenPayment(reference);
             }
         }
 
         function listenPayment(ref) {
+            if (activeListener && activePaymentRef) { db.ref('payments/' + activePaymentRef).off('value', activeListener); }
+            activePaymentRef = ref;
             const paymentRef = db.ref('payments/' + ref);
-            paymentRef.on('value', (snapshot) => {
+            activeListener = paymentRef.on('value', (snapshot) => {
                 const data = snapshot.val();
-                if (data && data.status === 'paid') {
-                    const successTitle = document.querySelector('#successScreen .status-title');
-                    if (successTitle) {
-                        successTitle.textContent = 'Pagamento Confirmado!';
-                        document.querySelector('#successScreen .status-desc').textContent = 'O seu pagamento foi recebido com sucesso. JazakAllahu Khairan!';
-                    }
+                if (!data) return;
+                if (data.status === 'paid') {
+                    if (activeListener) { paymentRef.off('value', activeListener); activeListener = null; }
+                    document.getElementById('successDetails').innerHTML = `<div class="row"><span class="label">Referência</span><span class="value">${ref}</span></div><div class="row"><span class="label">Valor</span><span class="value">${data.amount} MTN</span></div><div class="row"><span class="label">Método</span><span class="value">${(data.method || '').toUpperCase()}</span></div><div class="row"><span class="label">Estado</span><span class="value" style="color:var(--green-primary)">Confirmado ✓</span></div>`;
+                    document.querySelector('#successScreen .status-title').textContent = 'Pagamento Confirmado!';
+                    document.querySelector('#successScreen .status-desc').textContent = 'O seu pagamento foi recebido com sucesso. JazakAllahu Khairan!';
+                    showScreen('successScreen');
+                }
+                else if (data.status === 'failed' || data.status === 'error') {
+                    if (activeListener) { paymentRef.off('value', activeListener); activeListener = null; }
+                    document.getElementById('errorMessage').textContent = data.errorMessage || 'Pagamento recusado.';
+                    showScreen('errorScreen');
                 }
             });
         }
