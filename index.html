@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Islam Moçambique - Pagamentos seguros">
     <meta name="theme-color" content="#0B6623">
     <title>Islam Moçambique — Pagamentos</title>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -83,6 +84,10 @@
         .btn-gold:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(197,160,40,0.35)}
         .btn-outline{background:var(--white);color:var(--green-primary);border:2px solid var(--green-primary)}
         .btn-outline:hover{background:var(--green-pale)}
+        .btn-link{background:transparent;color:var(--green-primary);padding:8px;font-size:0.82rem;font-weight:600}
+        .btn-link:hover{text-decoration:underline}
+        .btn-danger{background:linear-gradient(135deg,#DC2626,#B91C1C);color:var(--white);box-shadow:0 4px 14px rgba(220,38,38,0.25)}
+        .btn-danger:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(220,38,38,0.35)}
 
         .status-screen{display:none;text-align:center;padding:30px 20px}
         .status-screen.active{display:block}
@@ -98,10 +103,6 @@
         .status-details .row .label{color:var(--gray-400);font-weight:500}
         .status-details .row .value{color:var(--gray-800);font-weight:600}
 
-        /* DEBUG BOX */
-        .debug-box{background:#1F2937;color:#10B981;padding:12px;border-radius:10px;font-family:monospace;font-size:0.75rem;margin-top:16px;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto}
-        .debug-box.hidden{display:none}
-
         .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:none;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px)}
         .loading-overlay.active{display:flex}
         .spinner{width:40px;height:40px;border:3px solid var(--gray-200);border-top-color:var(--green-primary);border-radius:50%;animation:spin 0.8s linear infinite}
@@ -112,6 +113,20 @@
         .footer-mission{font-size:0.72rem;color:var(--gray-500);font-style:italic}
         .footer-heart{color:var(--gold)}
 
+        /* Auth screens */
+        .auth-screen{display:none}
+        .auth-screen.active{display:block}
+        .auth-tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid var(--gray-100);padding-bottom:4px}
+        .auth-tab{flex:1;padding:10px;text-align:center;font-size:0.85rem;font-weight:600;color:var(--gray-400);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-6px;transition:var(--transition)}
+        .auth-tab.active{color:var(--green-primary);border-bottom-color:var(--green-primary)}
+        .auth-divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--gray-400);font-size:0.75rem}
+        .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--gray-200)}
+        .user-badge{display:flex;align-items:center;gap:10px;background:var(--green-pale);border:1.5px solid var(--green-light);border-radius:var(--radius-md);padding:12px 16px;margin-bottom:16px}
+        .user-badge .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--green-primary),var(--green-light));color:var(--white);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem}
+        .user-badge .user-info{flex:1}
+        .user-badge .user-name{font-size:0.9rem;font-weight:700;color:var(--gray-900)}
+        .user-badge .user-email{font-size:0.75rem;color:var(--gray-600)}
+
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes fadeInUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
         .animate-in{animation:fadeInUp 0.4s ease-out forwards;opacity:0}
@@ -120,6 +135,7 @@
         @media(min-width:480px){.header-title{font-size:1.4rem}.header-desc{font-size:0.82rem}.container{padding:0 20px}.form-section{padding:24px}}
         @media(min-width:640px){.header-title{font-size:1.6rem}}
     </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -148,7 +164,79 @@
 
     <main class="container">
 
-        <div id="paymentForm" class="form-section animate-in delay-1">
+        <!-- LOGIN / REGISTER SCREEN -->
+        <div id="authScreen" class="form-section auth-screen animate-in delay-1">
+            <h2><div class="icon">🔐</div> Acesse a sua Conta</h2>
+            <div class="auth-tabs">
+                <div class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Entrar</div>
+                <div class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Criar Conta</div>
+            </div>
+
+            <!-- Login Form -->
+            <div id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="nome@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Palavra-passe</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required>
+                </div>
+                <button class="btn btn-primary" onclick="loginUser()">Entrar</button>
+                <div style="text-align:center;margin-top:10px">
+                    <button class="btn btn-link" onclick="showForgotPassword()">Esqueceu a palavra-passe?</button>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerForm" style="display:none">
+                <div class="form-group">
+                    <label for="regName">Nome Completo *</label>
+                    <input type="text" id="regName" placeholder="Ex: Ahmed Mohamed" required>
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Email *</label>
+                    <input type="email" id="regEmail" placeholder="nome@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Palavra-passe * (min. 6 caracteres)</label>
+                    <input type="password" id="regPassword" placeholder="••••••••" required>
+                </div>
+                <div class="form-group">
+                    <label for="regPhone">Telefone *</label>
+                    <input type="tel" id="regPhone" placeholder="Ex: +258 84 123 4567" required>
+                    <div class="hint">Formato: +258XXXXXXXXX</div>
+                </div>
+                <button class="btn btn-primary" onclick="registerUser()">Criar Conta</button>
+            </div>
+        </div>
+
+        <!-- FORGOT PASSWORD SCREEN -->
+        <div id="forgotScreen" class="form-section auth-screen animate-in delay-1" style="display:none">
+            <h2><div class="icon">📧</div> Recuperar Palavra-passe</h2>
+            <p style="font-size:0.85rem;color:var(--gray-600);margin-bottom:14px">Insira o seu email e enviaremos um link para redefinir a palavra-passe.</p>
+            <div class="form-group">
+                <label for="forgotEmail">Email</label>
+                <input type="email" id="forgotEmail" placeholder="nome@email.com" required>
+            </div>
+            <button class="btn btn-primary" onclick="resetPassword()">Enviar Link</button>
+            <div style="text-align:center;margin-top:10px">
+                <button class="btn btn-link" onclick="showAuthScreen()">Voltar ao login</button>
+            </div>
+        </div>
+
+        <!-- PAYMENT FORM (visible only when logged in) -->
+        <div id="paymentForm" class="form-section animate-in delay-1" style="display:none">
+            <!-- User Badge -->
+            <div class="user-badge" id="userBadge">
+                <div class="avatar" id="userAvatar">U</div>
+                <div class="user-info">
+                    <div class="user-name" id="userDisplayName">Utilizador</div>
+                    <div class="user-email" id="userDisplayEmail">email@exemplo.com</div>
+                </div>
+                <button class="btn btn-danger" style="width:auto;padding:8px 14px;font-size:0.75rem" onclick="logoutUser()">Sair</button>
+            </div>
+
             <h2><div class="icon">👤</div> Dados do Pagante</h2>
             <div class="form-group">
                 <label for="fullName">Nome Completo *</label>
@@ -222,9 +310,6 @@
                 <span>Continuar Pagamento</span>
                 <span style="font-size:1.1rem">→</span>
             </button>
-
-            <!-- DEBUG: mostra erro detalhado -->
-            <div class="debug-box hidden" id="debugBox"></div>
         </div>
 
         <div id="successScreen" class="form-section status-screen">
@@ -284,13 +369,175 @@
         let selectedType = 'inscricao';
         let selectedAmount = 150;
         let selectedMethod = 'mpesa';
+        let currentUser = null;
 
-        function log(msg) {
-            const box = document.getElementById('debugBox');
-            box.classList.remove('hidden');
-            box.textContent += msg + '\n';
+        // ===== AUTH STATE LISTENER =====
+        auth.onAuthStateChanged((user) => {
+            currentUser = user;
+            if (user) {
+                // User is signed in
+                showPaymentScreen(user);
+            } else {
+                // User is signed out
+                showAuthScreen();
+            }
+        });
+
+        function showAuthScreen() {
+            document.getElementById('authScreen').style.display = 'block';
+            document.getElementById('authScreen').classList.add('active');
+            document.getElementById('forgotScreen').style.display = 'none';
+            document.getElementById('paymentForm').style.display = 'none';
+            ['successScreen','cardScreen','errorScreen'].forEach(s => {
+                document.getElementById(s).classList.remove('active');
+                document.getElementById(s).style.display = 'none';
+            });
         }
 
+        function showPaymentScreen(user) {
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('forgotScreen').style.display = 'none';
+            document.getElementById('paymentForm').style.display = 'block';
+            document.getElementById('paymentForm').classList.add('active');
+
+            // Fill user badge
+            const displayName = user.displayName || localStorage.getItem('userName') || 'Utilizador';
+            const email = user.email || '';
+            document.getElementById('userDisplayName').textContent = displayName;
+            document.getElementById('userDisplayEmail').textContent = email;
+            document.getElementById('userAvatar').textContent = displayName.charAt(0).toUpperCase();
+
+            // Auto-fill form if data exists in localStorage
+            const savedName = localStorage.getItem('userName');
+            const savedPhone = localStorage.getItem('userPhone');
+            if (savedName) document.getElementById('fullName').value = savedName;
+            if (savedPhone) document.getElementById('phone').value = savedPhone;
+            if (email) document.getElementById('email').value = email;
+        }
+
+        function showForgotPassword() {
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('forgotScreen').style.display = 'block';
+            document.getElementById('forgotScreen').classList.add('active');
+        }
+
+        function switchAuthTab(tab) {
+            document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+            document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+            document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+            document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+        }
+
+        // ===== LOGIN =====
+        async function loginUser() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                alert('Por favor, preencha o email e a palavra-passe.');
+                return;
+            }
+
+            showLoading(true);
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                // Success - onAuthStateChanged handles UI
+            } catch (error) {
+                showLoading(false);
+                let msg = 'Erro ao entrar. Verifique os dados.';
+                if (error.code === 'auth/user-not-found') msg = 'Conta não encontrada. Crie uma conta primeiro.';
+                if (error.code === 'auth/wrong-password') msg = 'Palavra-passe incorreta.';
+                if (error.code === 'auth/invalid-email') msg = 'Email inválido.';
+                if (error.code === 'auth/too-many-requests') msg = 'Muitas tentativas. Tente mais tarde.';
+                alert(msg);
+            }
+        }
+
+        // ===== REGISTER =====
+        async function registerUser() {
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const phone = document.getElementById('regPhone').value.trim();
+
+            if (!name || !email || !password || !phone) {
+                alert('Por favor, preencha todos os campos obrigatórios.');
+                return;
+            }
+            if (password.length < 6) {
+                alert('A palavra-passe deve ter pelo menos 6 caracteres.');
+                return;
+            }
+            if (phone.length < 9) {
+                alert('Número de telefone inválido.');
+                return;
+            }
+
+            showLoading(true);
+            try {
+                const cred = await auth.createUserWithEmailAndPassword(email, password);
+                await cred.user.updateProfile({ displayName: name });
+
+                // Save user data to Realtime Database
+                await db.ref('users/' + cred.user.uid).set({
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    createdAt: Date.now()
+                });
+
+                // Save to localStorage for form auto-fill
+                localStorage.setItem('userName', name);
+                localStorage.setItem('userPhone', phone);
+
+                // Success - onAuthStateChanged handles UI
+            } catch (error) {
+                showLoading(false);
+                let msg = 'Erro ao criar conta.';
+                if (error.code === 'auth/email-already-in-use') msg = 'Este email já está registado. Use "Entrar".';
+                if (error.code === 'auth/invalid-email') msg = 'Email inválido.';
+                if (error.code === 'auth/weak-password') msg = 'Palavra-passe muito fraca. Use pelo menos 6 caracteres.';
+                alert(msg);
+            }
+        }
+
+        // ===== FORGOT PASSWORD =====
+        async function resetPassword() {
+            const email = document.getElementById('forgotEmail').value.trim();
+            if (!email) {
+                alert('Por favor, insira o seu email.');
+                return;
+            }
+            showLoading(true);
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showLoading(false);
+                alert('Link de recuperação enviado! Verifique o seu email.');
+                showAuthScreen();
+            } catch (error) {
+                showLoading(false);
+                let msg = 'Erro ao enviar email.';
+                if (error.code === 'auth/user-not-found') msg = 'Email não encontrado.';
+                if (error.code === 'auth/invalid-email') msg = 'Email inválido.';
+                alert(msg);
+            }
+        }
+
+        // ===== LOGOUT =====
+        async function logoutUser() {
+            showLoading(true);
+            try {
+                await auth.signOut();
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userPhone');
+                localStorage.removeItem('lastPaymentRef');
+            } catch (e) {
+                showLoading(false);
+                alert('Erro ao sair. Tente novamente.');
+            }
+        }
+
+        // ===== PAYMENT FUNCTIONS (unchanged logic, enhanced with user UID) =====
         function selectType(el, type, amount) {
             document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
             el.classList.add('selected');
@@ -327,11 +574,9 @@
         }
 
         function resetForm() {
-            document.getElementById('debugBox').classList.add('hidden');
-            document.getElementById('debugBox').textContent = '';
-            document.getElementById('fullName').value = '';
-            document.getElementById('phone').value = '';
-            document.getElementById('email').value = '';
+            document.getElementById('fullName').value = localStorage.getItem('userName') || '';
+            document.getElementById('phone').value = localStorage.getItem('userPhone') || '';
+            document.getElementById('email').value = currentUser ? (currentUser.email || '') : '';
             document.getElementById('customValue').value = '';
             selectType(document.querySelector('.type-card'), 'inscricao', 150);
             selectMethod(document.querySelector('.method-card'), 'mpesa');
@@ -353,31 +598,19 @@
 
         async function processPayment() {
             if (!validate()) return;
+            if (!currentUser) {
+                alert('Sessão expirada. Faça login novamente.');
+                showAuthScreen();
+                return;
+            }
+
             showLoading(true);
-            document.getElementById('debugBox').textContent = '';
-            log('=== INÍCIO DO PAGAMENTO ===');
 
             const name = document.getElementById('fullName').value.trim();
             const phone = document.getElementById('phone').value.trim().replace(/\s/g,'');
             const email = document.getElementById('email').value.trim();
 
-            log('Dados: ' + name + ' | ' + phone + ' | ' + selectedType + ' | ' + selectedAmount + ' | ' + selectedMethod);
-
-            // Firebase Auth
-            if (!auth.currentUser) {
-                log('A fazer login anónimo...');
-                try { 
-                    await auth.signInAnonymously(); 
-                    log('Login anónimo OK');
-                } catch(e) { 
-                    log('ERRO login: ' + e.message);
-                }
-            } else {
-                log('Já autenticado');
-            }
-
             const reference = 'ISLAM-' + Date.now() + '-' + Math.random().toString(36).substr(2,6).toUpperCase();
-            log('Referência: ' + reference);
 
             const paymentData = {
                 name: name,
@@ -387,44 +620,44 @@
                 amount: selectedAmount,
                 method: selectedMethod,
                 currency: 'MZN',
-                reference: reference
+                reference: reference,
+                userId: currentUser.uid,
+                userEmail: currentUser.email
             };
 
             try {
-                log('A chamar Apps Script...');
                 const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(paymentData)
                 });
 
-                log('Resposta HTTP: ' + response.status);
-
                 const result = await response.json();
-                log('Resposta JSON: ' + JSON.stringify(result));
-
                 showLoading(false);
 
                 if (!result.success) {
-                    log('ERRO do servidor: ' + (result.error || 'desconhecido'));
                     document.getElementById('errorMessage').textContent = result.error || 'Erro no servidor.';
                     showScreen('errorScreen');
                     return;
                 }
 
-                log('Apps Script OK. A guardar no Firebase...');
-                
-                try {
-                    await db.ref('payments/' + reference).set({
-                        ...paymentData,
-                        status: 'pending',
-                        timestamp: Date.now(),
-                        netshopId: result.netshopId || null
-                    });
-                    log('Firebase OK - dados guardados');
-                } catch(fbErr) {
-                    log('ERRO Firebase: ' + fbErr.message);
-                }
+                // Save payment linked to user in Firebase
+                await db.ref('payments/' + reference).set({
+                    ...paymentData,
+                    status: 'pending',
+                    timestamp: Date.now(),
+                    netshopId: result.netshopId || null
+                });
+
+                // Also save to user's payment history
+                await db.ref('users/' + currentUser.uid + '/payments/' + reference).set({
+                    type: selectedType,
+                    amount: selectedAmount,
+                    method: selectedMethod,
+                    status: 'pending',
+                    timestamp: Date.now(),
+                    reference: reference
+                });
 
                 localStorage.setItem('lastPaymentRef', reference);
 
@@ -448,8 +681,6 @@
 
             } catch (err) {
                 showLoading(false);
-                log('ERRO fetch: ' + err.message);
-                log('Tipo: ' + err.name);
                 document.getElementById('errorMessage').textContent = 'Erro de conexão. Verifique a internet.';
                 showScreen('errorScreen');
             }
