@@ -1,0 +1,344 @@
+Prompt para criação de website 
+
+Nome: SorteMoz
+Funcionalidade: apostas lotéricas
+5 apostas diária mais super jackpot 
+
+Como funciona:
+O usuário faz login recarega e faz apostas, cada sorteio é sorteado logo após o término. Caso o usuário ganhe o valor é adicionado ao seu saldo, onde pode voltar a jogar, ou fazer Clash out ( levantamento).
+
+Para levantamento é descontado 10% da taxa de jogo, e só pode ser levantado o valor mínimo de 100.
+
+Para login será usado a FIREBASE auth
+Para auxiliar na ocultação do código da API de pagamento será usado Google script.
+
+A web deve ter uma advertências que é proibido a menores de 18 anos
+
+A lógica do jogo não pode estar visíveis na fontege, a lógica deve ser obtida pelo FIREBASE.
+
+Não pode estar escrito no código nem visualização do ecrã informações privadas como PIN, saldo, regras que o jogo usa para funcionar.
+
+No FIREBASE os nós devem ser:
+Nome:
+Número:
+Saldo 
+Recarga:
+Levantamento 
+
+O custo de cada aposta é de 10mtn.
+
+Regra de ganhos 
+1 bola 10 mtn
+2 bolas 50 mtn
+3 bolas 500mtn
+4 bola 5000mtn
+5 bolas 50.000mtn
+
+Regras de pagamento 60% para casa, 20% de 1 acerto, 15%  2 acertos, 5% 3 acertos, 1% 4 acertos, 1% 5 acertos…
+
+Regra de ouro: o usuário não ganha o que a casa não pode pagar.
+
+Cada aposta feita o usuário é debitado em seu saldo, caso não tenha saldo o usuário não tem como jogar.
+
+Código do FIREBASE apkey
+const firebaseConfig = {
+  apiKey: "AIzaSyCW9ZZadm4WJ_FKtOjvkP1czsfImwzl98c",
+  authDomain: "mozcoin.firebaseapp.com",
+  databaseURL: "https://mozcoin-default-rtdb.firebaseio.com",
+  projectId: "mozcoin",
+  storageBucket: "mozcoin.firebasestorage.app",
+  messagingSenderId: "1097811611947",
+  appId: "1:1097811611947:web:476c4b2e12fc4c6529756e",
+  measurementId: "G-9KCS6TG1CZ"
+};
+
+Regras da API de pagamento e levantamento:
+
+Wallet ID · 476172
+
+
+Documentação API — NetShop
+Referência oficial da Gateway NetShop. Integração com Wallet ID, API Key e a Base URL abaixo.
+Base URLhttps://www.netshop.co.mz/api/v1Copiar
+Fluxo de fundos
+Provedores → NetShop → Merchant. As cobranças liquidam para a conta NetShop do seu merchant e ficam disponíveis já com a comissão deduzida.
+
+. Autenticação
+Todos os pedidos exigem três credenciais obrigatórias:
+Wallet ID — identificador único de 6 dígitos do merchant (header X-Wallet-ID).
+API Key — chave secreta começada por ns_live_ ou ns_test_ (header Authorization: Bearer …).
+Base URL — https://www.netshop.co.mz/api/v1 (100% LIVE, sem subdomínios e sem ambiente de testes).
+curl https://www.netshop.co.mz/api/v1/charges \
+  -H "Authorization: Bearer ns_live_sk_4f8a2c…" \
+  -H "X-Wallet-ID: 418207" \
+  -H "Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000" \
+  -H "Content-Type: application/json"
+O Wallet ID é mostrado no canto superior direito do painel de cada merchant e em /app/definicoes. Pedidos sem Wallet ID válido devolvem 401 missing_or_invalid_wallet_id.
+2. Base URL & Versões
+A API é versionada por URL. A versão estável actual é v1. Servimos toda a plataforma a partir de netshop.co.mz — sem subdomínios (nada de pay., api. ou split.). Use sempre o domínio whitelabel:
+Base URL (LIVE):    https://www.netshop.co.mz/api/v1
+Links de pagamento: www.netshop.co.mz/pay/{code}
+Hosted checkout:    www.netshop.co.mz/link/{id}
+Split landing:      www.netshop.co.mz/split/{id}
+Health-check: antes de ir a produção, valide a Base URL com GET https://www.netshop.co.mz/api/v1/ping — deve devolver { "ok": true, "canonical_host": true }. Se canonical_host vier false, a URL configurada no seu backend está errada.
+curl -i https://www.netshop.co.mz/api/v1/ping
+3. Cobranças (Charges)
+Criar uma cobrança Visa/Mastercard, M-Pesa, e-Mola ou mKesh. Para method:"card" a resposta inclui um checkout.hosted_url (página segura hospedada pelo NetShop); para carteiras móveis a transacção é confirmada em tempo real pelo cliente no telemóvel.
+POST https://www.netshop.co.mz/api/v1/charges
+
+{
+  "amount": 2500,
+  "currency": "MZN",
+  "method": "mpesa",          // card | mpesa | emola | mkesh
+  "msisdn": "+258842828600",  // obrigatório para wallets móveis (omitir em card)
+  "customer_email": "cli@ex.mz", // recomendado para cartões
+  "tokenize_for_recurring": false, // true → prepara o cartão para subscrições
+  "reference": "Fatura #2410",
+  "metadata": { "order_id": "ord_001" }
+}
+Resposta:
+{
+  "id": "ch_01HZ…",
+  "status": "paid",            // paid | pending | failed
+  "amount": 2500,
+  "currency": "MZN",
+  "fees": { "platform": 375 },
+  "net": 2125,
+  "provider": { "transactionID": "DFR5KMP1B65", "thirdPartyReference": "ord_001" }
+}
+Resposta (cartão / Checkout hospedado NetShop):
+{
+  "id": "ch_PL-XXXX",
+  "status": "pending",
+  "method": "card",
+  "amount": 2500,
+  "currency": "MZN",
+  "reference": "Fatura #2410",
+  "checkout": {
+    "type": "hosted_url",
+    "hosted_url": "https://netshop.co.mz/pay/card/PL-XXXX?session=...",
+    "order_id": "PL-XXXX"
+  }
+}
+Fluxo cartão: redireccione o cliente para hosted_url — a página de pagamento é servida pelo NetShop com a marca do seu merchant. Após a autorização, a transacção converge para paid ou failed e o evento é enviado para o webhook que configurou no dashboard.
+Consultar estado de uma cobrança
+Se o seu sistema não receber a confirmação pelo webhook (ou pela resposta síncrona), consulte o estado actual da transacção. Este endpoint é a fonte de verdade — pode chamar sempre que precisar de reconciliar.
+GET https://www.netshop.co.mz/api/v1/charges/{id}
+
+# {id} aceita:
+#   • o "id" devolvido no POST /charges (ex.: ch_NSABC123)
+#   • o "reference" que enviou (ex.: Fatura #2410)
+curl https://www.netshop.co.mz/api/v1/charges/ch_NSABC123 \
+  -H "Authorization: Bearer ns_live_sk_4f8a2c…" \
+  -H "X-Wallet-ID: 418207"
+Resposta:
+{
+  "id": "ch_NSABC123",
+  "status": "paid",              // paid | pending | failed
+  "amount": 2500,
+  "currency": "MZN",
+  "method": "mpesa",
+  "reference": "Fatura #2410",
+  "msisdn": "842828600",
+  "fee": 250,
+  "net": 2250,
+  "provider": {
+    "transactionID": "DFR5KMP1B65",
+    "thirdPartyReference": "NSABC123",
+    "responseCode": "INS-0",
+    "responseDesc": "Request processed successfully"
+  },
+  "failed_reason": null,
+  "created_at": "2026-07-14T14:03:11.000Z",
+  "processed_at": "2026-07-14T14:03:22.000Z"
+}
+Cobranças presas em pending há mais de 5 minutos disparam automaticamente a rotina de reconciliação com o provedor antes de responderem, pelo que o estado devolvido reflecte o mais recente disponível. Se a cobrança não existir para o Wallet ID autenticado, a API devolve 404 charge_not_found
+
+4. Links de Pagamento
+POST https://www.netshop.co.mz/api/v1/payment-links
+
+{
+  "amount": 4500,
+  "currency": "MZN",
+  "title": "Curso UX 2026",
+  "expires_at": "2026-08-01T23:59:00Z",
+  "redirect_url": "https://minhaloja.mz/obrigado"
+}
+Devolve { "url": "https://www.netshop.co.mz/pay/abc123" }. Branding (logo, cores, nome, contactos) é herdado automaticamente do perfil do merchant.
+5. Split Payments
+Distribuir uma cobrança por várias sub-contas (regras criadas em /app/sub-contas):
+POST https://www.netshop.co.mz/api/v1/splits/process
+
+{
+  "split_id": "uuid-do-split",
+  "transaction_reference": "ord_001",
+  "gross_amount": 10000,
+  "platform_fee": 1500,
+  "gateway_fee": 0,
+  "payment_method": "mpesa",
+  "currency": "MZN",
+  "metadata": {}
+}
+É idempotente por (merchant, transaction_reference): o mesmo pedido nunca distribui duas vezes.
+.
+6. Subscrições / Débito Directo (Visa·Mastercard)
+Débito automático recorrente está disponível exclusivamente em Visa/Mastercard. Carteiras móveis (M-Pesa, e-Mola, mKesh) não suportam mandatos recorrentes — para cobranças únicas use POST /charges.
+POST https://www.netshop.co.mz/api/v1/subscriptions
+
+{
+  "amount": 1200,
+  "currency": "MZN",
+  "frequency": "monthly",
+  "custom_interval_days": null,
+  "reference": "PLAN-PRO-2026-001",
+  "label": "Subscrição Plano Pro",
+  "customer_name": "Ana Macuácua",
+  "customer_email": "ana@exemplo.mz",
+  "metadata": { "plan": "pro" }
+}
+Frequências aceites: daily, weekly, monthly, yearly, custom (obriga custom_interval_days entre 1 e 365).
+Resposta:
+{
+  "id": "sub_01HZ…",
+  "reference": "PLAN-PRO-2026-001",
+  "status": "pending",
+  "amount": 1200,
+  "currency": "MZN",
+  "frequency": "monthly",
+  "customer": { "name": "Ana Macuácua", "email": "ana@exemplo.mz" },
+  "checkout": { "type": "hosted_url", "url": "https://www.netshop.co.mz/s/PLAN-PRO-2026-001" }
+}
+Abra checkout.url para o cliente aceitar o mandato, autorizar o 1º ciclo e tokenizar o cartão. Após o pagamento paid, a subscrição passa a active e os ciclos seguintes são debitados automaticamente pelo NetShop nas datas do plano (sem nova interacção do cliente).
+7. Payouts (B2C)
+Envie dinheiro da sua carteira NetShop para qualquer MSISDN M-Pesa ou e-Mola. Mesmo modelo de autenticação, idempotência e webhooks das cobranças. Sem mínimo em B2C automatizado.
+O payout debita apenas o saldo disponível na sua conta NetShop (cobranças liquidadas menos comissões e payouts anteriores). Pedidos acima do disponível são rejeitados com 422 insufficient_balance.
+POST https://www.netshop.co.mz/api/v1/payouts
+
+{
+  "amount": 1500,
+  "currency": "MZN",
+  "method": "mpesa",            // mpesa | emola
+  "msisdn": "+258842828600",    // MSISDN do destinatário
+  "reference": "SAL-2410-001",  // identificador único no seu sistema
+  "metadata": { "purpose": "salario" }
+}
+Resposta:
+{
+  "id": "po_NB01HZ…",
+  "status": "completed",         // completed | pending | failed
+  "amount": 1500,
+  "currency": "MZN",
+  "method": "mpesa",
+  "fees": { "our": 90, "provider": 60 },
+  "net": 1350,
+  "reference": "SAL-2410-001",
+  "provider": {
+    "transactionID": "DFR5KMP1B65",
+    "thirdPartyReference": "NB01HZ…"
+  }
+}
+Payouts assíncronos (status:"pending") convergem via callback do provedor. Assim que confirmados, disparamos payout.completed ou payout.failed no seu webhook. Cartões (Visa/Mastercard) não suportam B2C — para reembolsos use POST /refunds.
+Consultar estado de um payout
+Se não receber a confirmação pelo webhook (ou pela resposta síncrona), consulte o estado actual do payout. Fonte de verdade — pode chamar sempre que precisar de reconciliar.
+GET https://www.netshop.co.mz/api/v1/payouts/{id}
+
+# {id} aceita:
+#   • o "id" devolvido no POST /payouts (ex.: po_NB01HZ…)
+#   • o "reference" que enviou (ex.: SAL-2410-001)
+curl https://www.netshop.co.mz/api/v1/payouts/po_NB01HZ \
+  -H "Authorization: Bearer ns_live_sk_4f8a2c…" \
+  -H "X-Wallet-ID: 418207"
+Resposta:
+{
+  "id": "po_NB01HZ…",
+  "status": "completed",         // completed | pending | failed
+  "amount": 1500,
+  "currency": "MZN",
+  "method": "mpesa",
+  "reference": "SAL-2410-001",
+  "msisdn": "842828600",
+  "fees": { "our": 90, "provider": 60 },
+  "net": 1350,
+  "provider": {
+    "transactionID": "DFR5KMP1B65",
+    "thirdPartyReference": "NB01HZ…",
+    "responseCode": "INS-0",
+    "responseDesc": "Request processed successfully"
+  },
+  "failed_reason": null,
+  "created_at": "2026-07-14T14:03:11.000Z",
+  "processed_at": "2026-07-14T14:03:22.000Z"
+}
+Payouts presos em pending há mais de 5 minutos disparam automaticamente a rotina de reconciliação com o provedor antes de responderem. Se o payout não existir para o Wallet ID autenticado, a API devolve 404 payout_not_found.
+8. Webhooks
+Eventos enviados ao seu endpoint HTTPS, com retentativas exponenciais até 72h:
+charge.paid
+charge.failed
+charge.pending
+refund.created
+payout.completed
+payout.failed
+dispute.opened
+subscription.renewed
+Cada pedido inclui o header X-NetShop-Signature (HMAC-SHA256 sobre o corpo). Valide sempre antes de processar:
+const expected = hmacSha256(secret, rawBody);
+if (!timingSafeEqual(expected, signatureHeader)) reject(401);
+
+9. Idempotência
+Todos os POST aceitam Idempotency-Key (UUID único). Pedidos repetidos com a mesma chave devolvem a resposta original — seguro para retries com timeout.
+10. Limites & Mínimos
+Valores mínimos por método de pagamento e por payout, aplicáveis em LIVE:
+Operação
+Método
+Mínimo
+Cobrança
+M-Pesa
+10 MT
+Cobrança
+mKesh
+10 MT
+Cobrança
+e-Mola
+50 MT
+Cobrança
+Visa / Mastercard
+50 MT
+Cobrança ZAR
+Visa / Mastercard
+R 10
+Payout manual
+Banco / Wallet
+1 000 MT
+Payout automático / B2C
+M-Pesa, e-Mola, mKesh
+Sem mínimo
+
+11. Códigos de Erro
+401 missing_or_invalid_api_key
+401 missing_or_invalid_wallet_id
+403 wallet_id_mismatch
+400 validation_error
+422 processing_failed
+409 idempotency_conflict
+429 rate_limited
+500 internal_error
+12. SDKs Oficiais
+Node.js / TypeScript — npm i @netshop/node
+Python — pip install netshop
+PHP — composer require netshop/netshop-php
+Java — com.netshop:netshop-java:1.x
+Plugins prontos: WooCommerce e WHMCS. Para Shopify use o guia NetShop + Shopify (Custom Payment).
+Índice
+01Autenticação
+02Base URL & Versões
+03Cobranças
+04Links de Pagamento
+05Split Payments
+06Subscrições / Débito Directo
+07Payouts (B2C)
+08Webhooks
+09Idempotência
+10Limites & Mínimos
+11Códigos de Erro
+12SDKs & Plugins
+
