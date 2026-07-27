@@ -137,6 +137,7 @@
         @media(min-width:640px){.header-title{font-size:1.6rem}}
     </style>
 <base target="_blank">
+<base target="_blank">
 </head>
 <body>
 
@@ -316,7 +317,7 @@
             <div class="status-details" id="processingDetails"></div>
             <div style="margin-bottom:16px">
                 <span class="pulse-dot"></span>
-                <span style="font-size:0.8rem;color:var(--gray-600)">A verificar estado do pagamento...</span>
+                <span id="processingText" style="font-size:0.8rem;color:var(--gray-600)">A verificar estado do pagamento...</span>
             </div>
             <button class="btn btn-outline" onclick="resetForm()">Voltar ao Início</button>
         </div>
@@ -382,6 +383,8 @@
         let currentUser = null;
         let activePaymentRef = null;
         let activeListener = null;
+        let processingTimer = null;
+        let lastShownScreen = null;
 
         auth.onAuthStateChanged((user) => {
             currentUser = user;
@@ -393,12 +396,14 @@
             hideAllScreens();
             document.getElementById('authScreen').style.display = 'block';
             document.getElementById('authScreen').classList.add('active');
+            lastShownScreen = 'authScreen';
         }
 
         function showPaymentScreen(user) {
             hideAllScreens();
             document.getElementById('paymentForm').style.display = 'block';
             document.getElementById('paymentForm').classList.add('active');
+            lastShownScreen = 'paymentForm';
             const displayName = user.displayName || localStorage.getItem('userName') || 'Utilizador';
             const email = user.email || '';
             document.getElementById('userDisplayName').textContent = displayName;
@@ -416,15 +421,18 @@
             document.getElementById('forgotScreen').style.display = 'none';
             document.getElementById('paymentForm').style.display = 'none';
             ['successScreen','cardScreen','errorScreen','processingScreen'].forEach(s => {
-                document.getElementById(s).classList.remove('active');
-                document.getElementById(s).style.display = 'none';
+                const el = document.getElementById(s);
+                el.classList.remove('active');
+                el.style.display = 'none';
             });
+            stopProcessingTimer();
         }
 
         function showForgotPassword() {
             hideAllScreens();
             document.getElementById('forgotScreen').style.display = 'block';
             document.getElementById('forgotScreen').classList.add('active');
+            lastShownScreen = 'forgotScreen';
         }
 
         function switchAuthTab(tab) {
@@ -518,16 +526,53 @@
 
         function showScreen(id) {
             hideAllScreens();
-            if (id === 'paymentForm') { document.getElementById('paymentForm').style.display = 'block'; document.getElementById('paymentForm').classList.add('active'); }
-            else { document.getElementById(id).style.display = 'block'; setTimeout(() => document.getElementById(id).classList.add('active'), 10); }
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (id === 'paymentForm') {
+                el.style.display = 'block';
+                el.classList.add('active');
+            } else {
+                el.style.display = 'block';
+                // Força reflow para garantir que a transição funcione
+                void el.offsetWidth;
+                el.classList.add('active');
+            }
+            lastShownScreen = id;
         }
 
         function resetForm() {
-            if (activeListener && activePaymentRef) { db.ref('payments/' + activePaymentRef).off('value', activeListener); activeListener = null; activePaymentRef = null; }
+            detachAllListeners();
             document.getElementById('customValue').value = '';
             selectType(document.querySelector('.type-card'), 'inscricao', 150);
             selectMethod(document.querySelector('.method-card'), 'mpesa');
             if (currentUser) showPaymentScreen(currentUser); else showAuthScreen();
+        }
+
+        function detachAllListeners() {
+            if (activeListener && activePaymentRef) {
+                try { db.ref('payments/' + activePaymentRef).off('value', activeListener); } catch(e){}
+            }
+            activeListener = null;
+            activePaymentRef = null;
+            stopProcessingTimer();
+        }
+
+        function stopProcessingTimer() {
+            if (processingTimer) {
+                clearTimeout(processingTimer);
+                processingTimer = null;
+            }
+        }
+
+        function startProcessingTimer(ref) {
+            stopProcessingTimer();
+            processingTimer = setTimeout(() => {
+                if (lastShownScreen === 'processingScreen') {
+                    detachAllListeners();
+                    document.getElementById('errorMessage').textContent = 'O tempo de espera foi excedido. Se já confirmou no telemóvel, o pagamento será registado em breve.';
+                    showScreen('errorScreen');
+                }
+            }, 300000); // 5 minutos
         }
 
         function validate() {
@@ -588,33 +633,53 @@
                 document.getElementById('processingDetails').innerHTML = `<div class="row"><span class="label">Referência</span><span class="value">${reference}</span></div><div class="row"><span class="label">Valor</span><span class="value">${selectedAmount} MTN</span></div><div class="row"><span class="label">Método</span><span class="value">${selectedMethod.toUpperCase()}</span></div><div class="row"><span class="label">Telefone</span><span class="value">${phone}</span></div>`;
                 showScreen('processingScreen');
                 listenPayment(reference);
+                startProcessingTimer(reference);
             }
         }
 
         function listenPayment(ref) {
-            if (activeListener && activePaymentRef) { db.ref('payments/' + activePaymentRef).off('value', activeListener); }
+            // Sempre limpa listener anterior antes de criar novo
+            detachAllListeners();
             activePaymentRef = ref;
             const paymentRef = db.ref('payments/' + ref);
             activeListener = paymentRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (!data) return;
+
                 if (data.status === 'paid') {
-                    if (activeListener) { paymentRef.off('value', activeListener); activeListener = null; }
+                    detachAllListeners();
                     document.getElementById('successDetails').innerHTML = `<div class="row"><span class="label">Referência</span><span class="value">${ref}</span></div><div class="row"><span class="label">Valor</span><span class="value">${data.amount} MTN</span></div><div class="row"><span class="label">Método</span><span class="value">${(data.method || '').toUpperCase()}</span></div><div class="row"><span class="label">Estado</span><span class="value" style="color:var(--green-primary)">Confirmado ✓</span></div>`;
                     document.querySelector('#successScreen .status-title').textContent = 'Pagamento Confirmado!';
                     document.querySelector('#successScreen .status-desc').textContent = 'O seu pagamento foi recebido com sucesso. JazakAllahu Khairan!';
                     showScreen('successScreen');
                 }
                 else if (data.status === 'failed' || data.status === 'error') {
-                    if (activeListener) { paymentRef.off('value', activeListener); activeListener = null; }
+                    detachAllListeners();
                     document.getElementById('errorMessage').textContent = data.errorMessage || 'Pagamento recusado.';
                     showScreen('errorScreen');
+                }
+                else if (data.status === 'pending' || data.status === 'processing') {
+                    // Se estivermos numa tela diferente do processing, volta para lá
+                    if (lastShownScreen !== 'processingScreen' && lastShownScreen !== 'successScreen') {
+                        showScreen('processingScreen');
+                        startProcessingTimer(ref);
+                    }
                 }
             });
         }
 
+        // Restaura listener de pagamento anterior se a página for recarregada
         const lastRef = localStorage.getItem('lastPaymentRef');
-        if (lastRef) listenPayment(lastRef);
+        if (lastRef) {
+            // Verifica o estado actual antes de mostrar qualquer coisa
+            db.ref('payments/' + lastRef).once('value').then((snap) => {
+                const data = snap.val();
+                if (data && (data.status === 'processing' || data.status === 'pending')) {
+                    listenPayment(lastRef);
+                }
+                // Se já estiver pago/falhado, não faz nada — deixa o user continuar normalmente
+            });
+        }
     </script>
 
 </body>
