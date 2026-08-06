@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modal de Pagamento — Islam Moçambique</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+  }
+  .modal-card {
+    background: #ffffff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    overflow: hidden;
+    animation: slideUp 0.4s ease-out;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .modal-header {
+    background: linear-gradient(90deg, #0d9488, #115e59);
+    color: #fff;
+    padding: 24px;
+    text-align: center;
+  }
+  .modal-header h2 { font-size: 1.4rem; font-weight: 700; }
+  .modal-header p { font-size: 0.9rem; opacity: 0.9; margin-top: 4px; }
+  .modal-body { padding: 24px; }
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #0d9488, #115e59);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(13,148,136,0.3); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #374151;
+  }
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: #0d9488;
+  }
+  .error-msg {
+    color: #dc2626;
+    font-size: 0.8rem;
+    margin-top: 4px;
+    display: none;
+  }
+  .spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    z-index: 2000;
+    transform: translateX(120%);
+    transition: transform 0.4s ease-out;
+    max-width: 320px;
+  }
+  .notification.show { transform: translateX(0); }
+  .notification.success { background: #059669; }
+  .notification.error { background: #dc2626; }
+  .notification.pending { background: #d97706; }
+  .modal-footer {
+    background: #f8fafc;
+    padding: 16px 24px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #64748b;
+    border-top: 1px solid #e2e8f0;
+  }
+  .modal-footer a { color: #0d9488; text-decoration: none; font-weight: 600; }
+  .hidden { display: none !important; }
+  .status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .status-pendente { background: #fef3c7; color: #92400e; }
+  .status-pago { background: #d1fae5; color: #065f46; }
+  .status-falhou { background: #fee2e2; color: #991b1b; }
+  .txn-history { margin-top: 16px; max-height: 200px; overflow-y: auto; }
+  .txn-item {
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #f8fafc;
+    margin-bottom: 8px;
+    border-left: 4px solid #0d9488;
+  }
+  .txn-item small { color: #64748b; }
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<!-- Botão para abrir modal -->
+<button class="btn-primary" onclick="openModal()" style="max-width:280px;">
+  💳 Fazer Pagamento
+</button>
+
+<!-- Modal -->
+<div id="paymentModal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>🕌 Islam Moçambique</h2>
+      <p>Pagamentos online confiáveis e seguros</p>
+    </div>
+
+    <div class="modal-body">
+      <!-- Tela inicial -->
+      <div id="screen-start">
+        <p style="text-align:center; color:#64748b; margin-bottom:20px;">
+          Preencha os dados abaixo para efetuar o pagamento do seu produto ou serviço.
+        </p>
+        <button class="btn-primary" onclick="showForm()">Fazer Pagamento</button>
+      </div>
+
+      <!-- Formulário -->
+      <form id="paymentForm" class="hidden" onsubmit="handleSubmit(event)">
+        <div class="form-group">
+          <label for="fullName">Nome completo *</label>
+          <input type="text" id="fullName" placeholder="Ex: Ali Mohamed" required minlength="3">
+          <span class="error-msg" id="err-fullName">Nome inválido</span>
+        </div>
+
+        <div class="form-group">
+          <label for="email">E-mail *</label>
+          <input type="email" id="email" placeholder="Ex: ali@email.com" required>
+          <span class="error-msg" id="err-email">E-mail inválido</span>
+        </div>
+
+        <div class="form-group">
+          <label for="productName">Nome do produto *</label>
+          <input type="text" id="productName" placeholder="Ex: Curso de Árabe" required minlength="2">
+          <span class="error-msg" id="err-productName">Produto inválido</span>
+        </div>
+
+        <div class="form-group">
+          <label for="amount">Valor a pagar (MZN) *</label>
+          <input type="number" id="amount" placeholder="Ex: 1500" required min="1" step="0.01">
+          <span class="error-msg" id="err-amount">Valor abaixo do mínimo para este método</span>
+        </div>
+
+        <div class="form-group">
+          <label for="method">Modalidade de pagamento *</label>
+          <select id="method" required onchange="validateAmount()">
+            <option value="">Selecione...</option>
+            <option value="mpesa">M-Pesa</option>
+            <option value="emola">E-mola</option>
+            <option value="mkesh">mKesh</option>
+          </select>
+          <span class="error-msg" id="err-method">Selecione uma modalidade</span>
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Número de telefone (MSISDN) *</label>
+          <input type="tel" id="phone" placeholder="Ex: +258842828600" required>
+          <span class="error-msg" id="err-phone">Formato inválido. Use +258XXXXXXXXX</span>
+        </div>
+
+        <button type="submit" class="btn-primary" id="btnPay">
+          <span id="btnText">Pagar</span>
+        </button>
+        <button type="button" class="btn-primary" style="background:#94a3b8; margin-top:10px;" onclick="closeModal()">Cancelar</button>
+      </form>
+
+      <!-- Status / Histórico -->
+      <div id="screen-status" class="hidden">
+        <div style="text-align:center; padding:20px 0;">
+          <div id="statusIcon" style="font-size:3rem; margin-bottom:12px;">⏳</div>
+          <h3 id="statusTitle">Processando pagamento...</h3>
+          <p id="statusDesc" style="color:#64748b; margin-top:8px;">Aguarde a confirmação da operadora.</p>
+          <div id="statusBadge" class="status-badge status-pendente" style="margin-top:12px;">Pendente</div>
+        </div>
+        <div class="txn-history" id="txnHistory"></div>
+        <button class="btn-primary" style="margin-top:16px;" onclick="resetForm()">Novo Pagamento</button>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <p><strong>Modal de pagamento desenvolvido por Islam Moçambique</strong></p>
+      <p>Para pagamentos online, de forma confiável e segura.</p>
+      <p>Para suporte liga: <a href="tel:+258860407269">+258 860 407 269</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- Notificação -->
+<div id="notification" class="notification"></div>
+
+<!-- Firebase SDK v9 (modular) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD2rNS7HSJyek3OCrRquudFgqQSWXZJYrY",
+    authDomain: "madrassa-online-b851c.firebaseapp.com",
+    databaseURL: "https://madrassa-online-b851c-default-rtdb.firebaseio.com",
+    projectId: "madrassa-online-b851c",
+    storageBucket: "madrassa-online-b851c.firebasestorage.app",
+    messagingSenderId: "360782668012",
+    appId: "1:360782668012:web:d501ef187911db632445c9",
+    measurementId: "G-RV9GD4S22T"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // Expor para uso global
+  window.firebaseDB = db;
+  window.firebaseRef = ref;
+  window.firebaseSet = set;
+  window.firebaseOnValue = onValue;
+
+  // Carregar notificações pendentes do localStorage
+  loadStoredNotifications();
+</script>
+
+<script>
+  // ===== CONSTANTES =====
+  const MIN_AMOUNTS = {
+    mpesa: 10,
+    mkesh: 10,
+    emola: 50,
+    card: 50
+  };
+
+  let currentTxnId = null;
+  let unsubscribe = null;
+
+  // ===== MODAL =====
+  function openModal() {
+    document.getElementById('paymentModal').classList.remove('hidden');
+  }
+  function closeModal() {
+    document.getElementById('paymentModal').classList.add('hidden');
+    resetForm();
+  }
+  function showForm() {
+    document.getElementById('screen-start').classList.add('hidden');
+    document.getElementById('paymentForm').classList.remove('hidden');
+  }
+  function resetForm() {
+    document.getElementById('paymentForm').reset();
+    document.getElementById('paymentForm').classList.add('hidden');
+    document.getElementById('screen-status').classList.add('hidden');
+    document.getElementById('screen-start').classList.remove('hidden');
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    currentTxnId = null;
+  }
+
+  // ===== VALIDAÇÃO =====
+  function validateAmount() {
+    const method = document.getElementById('method').value;
+    const amount = parseFloat(document.getElementById('amount').value);
+    const err = document.getElementById('err-amount');
+    if (method && amount && amount < MIN_AMOUNTS[method]) {
+      err.textContent = `Valor mínimo para ${method.toUpperCase()}: ${MIN_AMOUNTS[method]} MZN`;
+      err.style.display = 'block';
+      return false;
+    }
+    err.style.display = 'none';
+    return true;
+  }
+
+  function validatePhone(phone) {
+    return /^\+258[0-9]{9}$/.test(phone.trim());
+  }
+
+  function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  }
+
+  // ===== NOTIFICAÇÕES =====
+  function showNotification(message, type = 'success') {
+    const notif = document.getElementById('notification');
+    notif.textContent = message;
+    notif.className = `notification ${type} show`;
+    setTimeout(() => notif.classList.remove('show'), 5000);
+  }
+
+  function saveToLocalStorage(txn) {
+    const key = `notificacao_${txn.id}`;
+    localStorage.setItem(key, JSON.stringify({
+      id: txn.id,
+      status: txn.status,
+      produto: txn.produto,
+      valor: txn.valor,
+      method: txn.method,
+      data: new Date().toISOString()
+    }));
+  }
+
+  function loadStoredNotifications() {
+    const history = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('notificacao_')) {
+        try { history.push(JSON.parse(localStorage.getItem(key))); } catch(e){}
+      }
+    }
+    if (history.length > 0) {
+      // Mostra notificação do mais recente se ainda não foi visto
+      const last = history.sort((a,b) => new Date(b.data) - new Date(a.data))[0];
+      if (last && last.status === 'paid') {
+        showNotification(`✅ Pagamento confirmado: ${last.produto} — ${last.valor} MZN`, 'success');
+      }
+    }
+  }
+
+  // ===== SUBMISSÃO =====
+  async function handleSubmit(e) {
+    e.preventDefault();
+
+    const fullName = document.getElementById('fullName').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const productName = document.getElementById('productName').value.trim();
+    const amount = parseFloat(document.getElementById('amount').value);
+    const method = document.getElementById('method').value;
+    const phone = document.getElementById('phone').value.trim();
+
+    // Validações
+    let valid = true;
+    if (fullName.length < 3) { document.getElementById('err-fullName').style.display='block'; valid=false; }
+    else { document.getElementById('err-fullName').style.display='none'; }
+
+    if (!validateEmail(email)) { document.getElementById('err-email').style.display='block'; valid=false; }
+    else { document.getElementById('err-email').style.display='none'; }
+
+    if (productName.length < 2) { document.getElementById('err-productName').style.display='block'; valid=false; }
+    else { document.getElementById('err-productName').style.display='none'; }
+
+    if (!method) { document.getElementById('err-method').style.display='block'; valid=false; }
+    else { document.getElementById('err-method').style.display='none'; }
+
+    if (!validatePhone(phone)) { document.getElementById('err-phone').style.display='block'; valid=false; }
+    else { document.getElementById('err-phone').style.display='none'; }
+
+    if (!validateAmount()) valid = false;
+
+    if (!valid) return;
+
+    // Gerar ID único
+    const txnId = 'txn_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    currentTxnId = txnId;
+
+    // UI loading
+    const btn = document.getElementById('btnPay');
+    const btnText = document.getElementById('btnText');
+    btn.disabled = true;
+    btnText.innerHTML = '<span class="spinner"></span> A processar...';
+
+    try {
+      const db = window.firebaseDB;
+      const { ref, set } = window;
+
+      const payload = {
+        nomeCompleto: fullName,
+        email: email,
+        produto: productName,
+        valor: amount,
+        modalidade: method,
+        msisdn: phone,
+        status: 'pendente',
+        reference: txnId,
+        createdAt: new Date().toISOString(),
+        netshopResponse: null
+      };
+
+      await window.firebaseSet(window.firebaseRef(db, 'pagamentos_pendentes/' + txnId), payload);
+
+      // Mostrar tela de status
+      document.getElementById('paymentForm').classList.add('hidden');
+      document.getElementById('screen-status').classList.remove('hidden');
+
+      // Escutar mudanças em tempo real
+      listenToTransaction(txnId, payload);
+
+      showNotification('Pagamento registado. Aguarde confirmação.', 'pending');
+
+    } catch (error) {
+      console.error(error);
+      showNotification('Erro ao registar pagamento. Tente novamente.', 'error');
+      btn.disabled = false;
+      btnText.textContent = 'Pagar';
+    }
+  }
+
+  // ===== ESCUTA FIREBASE EM TEMPO REAL =====
+  function listenToTransaction(txnId, originalData) {
+    const db = window.firebaseDB;
+    const txnRef = window.firebaseRef(db, 'pagamentos_concluidos/' + txnId);
+
+    unsubscribe = window.firebaseOnValue(txnRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+
+      const icon = document.getElementById('statusIcon');
+      const title = document.getElementById('statusTitle');
+      const desc = document.getElementById('statusDesc');
+      const badge = document.getElementById('statusBadge');
+
+      if (data.status === 'paid') {
+        icon.textContent = '✅';
+        title.textContent = 'Pagamento confirmado!';
+        desc.textContent = `${originalData.produto} — ${originalData.valor} MZN via ${originalData.modalidade.toUpperCase()}`;
+        badge.textContent = 'Pago';
+        badge.className = 'status-badge status-pago';
+        showNotification(`✅ ${originalData.produto}: pagamento confirmado!`, 'success');
+        saveToLocalStorage({ id: txnId, status: 'paid', produto: originalData.produto, valor: originalData.valor, method: originalData.modalidade });
+        addToHistory(txnId, originalData, 'paid');
+        if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+      } else if (data.status === 'failed') {
+        icon.textContent = '❌';
+        title.textContent = 'Pagamento falhou';
+        desc.textContent = data.failed_reason || 'Tente novamente ou contacte o suporte.';
+        badge.textContent = 'Falhou';
+        badge.className = 'status-badge status-falhou';
+        showNotification('❌ Pagamento não foi concluído.', 'error');
+        saveToLocalStorage({ id: txnId, status: 'failed', produto: originalData.produto, valor: originalData.valor, method: originalData.modalidade });
+        addToHistory(txnId, originalData, 'failed');
+        if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+      }
+    });
+  }
+
+  function addToHistory(id, data, status) {
+    const container = document.getElementById('txnHistory');
+    const item = document.createElement('div');
+    item.className = 'txn-item';
+    item.innerHTML = `
+      <strong>${data.produto}</strong> — ${data.valor} MZN<br>
+      <small>${data.modalidade.toUpperCase()} | Ref: ${id}</small><br>
+      <span class="status-badge ${status === 'paid' ? 'status-pago' : 'status-falhou'}">${status.toUpperCase()}</span>
+    `;
+    container.prepend(item);
+  }
+
+  // Fechar modal ao clicar fora
+  document.getElementById('paymentModal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('paymentModal')) closeModal();
+  });
+</script>
+</body>
+</html>
